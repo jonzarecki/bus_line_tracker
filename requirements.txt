@@ -8,3 +8,4 @@ jupytext>=1.16.0
 ipykernel>=6.0.0  # For running the notebook
 notebook>=7.0.0   # For running the notebook
 open-bus-stride-client
+folium>=0.14.0  # For map visualizations

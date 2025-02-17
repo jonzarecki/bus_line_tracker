@@ -1,17 +1,44 @@
+# ---
+# jupyter:
+#   jupytext:
+#     formats: ipynb,py:percent
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.16.7
+#   kernelspec:
+#     display_name: Python 3 (ipykernel)
+#     language: python
+#     name: python3
+# ---
+
 # %% [markdown]
 # # Bus Location Data API Exploration
-# 
+#
 # This notebook explores the bus location data using the MOT SIRI API directly.
 
 # %%
+# Imports and setup
+import IPython
+from IPython import get_ipython
 import pandas as pd
 import datetime
 from dateutil import tz
 from pprint import PrettyPrinter
 import sys
+import stride
+import folium
 
-# Configure UTF-8 encoding for output
-sys.stdout.reconfigure(encoding='utf-8')
+# %%
+# Configure system and pandas settings
+# pass if running in jupyter notebook
+try:
+    # Configure UTF-8 encoding for output
+    sys.stdout.reconfigure(encoding='utf-8')
+except:
+    pass
+
 # Initialize PrettyPrinter with proper encoding
 pp = PrettyPrinter(indent=2, width=100, sort_dicts=False)
 
@@ -19,8 +46,8 @@ pd.options.display.max_columns = 1000
 pd.options.display.max_colwidth = 1000
 pd.set_option('display.unicode.east_asian_width', True)
 
-import stride
-
+# %%
+# Get routes data
 routes = pd.DataFrame(stride.get('/gtfs_routes/list', {'route_short_name':56,
                                               'date_from': '2025-01-18',
                                               'date_to':  '2025-01-18'}))
@@ -28,8 +55,8 @@ routes = routes[routes["agency_name"] == "מטרופולין"]
 
 pp.pprint(routes.to_dict('records'))
 
-exit(0)
-
+# %%
+# Get SIRI vehicle locations
 siri_vehicle_locations_480 = pd.DataFrame(stride.iterate('/siri_vehicle_locations/list', {
     'siri_routes__line_ref': '7020',
     'siri_rides__schedualed_start_time_from': datetime.datetime(2025,1, 18, tzinfo=tz.gettz('Israel')),
@@ -39,6 +66,8 @@ siri_vehicle_locations_480 = pd.DataFrame(stride.iterate('/siri_vehicle_location
 
 print(siri_vehicle_locations_480.shape)
 
+# %%
+# Helper function for date localization
 def localize_dates(data, dt_columns = None):
     if dt_columns is None:
         dt_columns=[]
@@ -49,12 +78,165 @@ def localize_dates(data, dt_columns = None):
         data[c] = pd.to_datetime(data[c]).dt.tz_convert('Israel')
     
     return data
-dt_columns = ['recorded_at_time','siri_ride__scheduled_start_time']
 
+dt_columns = ['recorded_at_time','siri_ride__scheduled_start_time']
 siri_vehicle_locations_480 = localize_dates(siri_vehicle_locations_480, dt_columns)
 
 print(siri_vehicle_locations_480.shape)
-
 print(siri_vehicle_locations_480.head())
+
+# %%
+# Examine the data structure
+print("Dataset shape:", siri_vehicle_locations_480.shape)
+print("\nColumns in the dataset:")
+for col in sorted(siri_vehicle_locations_480.columns):
+    print(f"- {col}")
+
+print("\nSample data with key information:")
+display(siri_vehicle_locations_480[['lon', 'lat', 'recorded_at_time', 
+                                  'bearing', 'velocity', 'distance_from_journey_start']].head())
+
+# %%
+# Create an enhanced map visualization
+def create_enhanced_bus_locations_map(locations_df):
+    # Calculate the center of the map (mean of coordinates)
+    center_lat = locations_df['lat'].mean()
+    center_lon = locations_df['lon'].mean()
+    
+    # Create a map centered on the mean position
+    m = folium.Map(location=[center_lat, center_lon], 
+                  zoom_start=13,
+                  tiles='cartodbpositron')  # Using a cleaner map style
+    
+    # Add a timestamp to show data freshness
+    latest_time = locations_df['recorded_at_time'].max()
+    earliest_time = locations_df['recorded_at_time'].min()
+    
+    title_html = f'''
+        <div style="position: fixed; 
+                    top: 10px; left: 50px; width: 300px; height: 60px; 
+                    z-index:9999; font-size:14px; background-color: white;
+                    padding: 10px; border-radius: 5px;">
+            <b>Bus Locations Data</b><br>
+            Time Range: {earliest_time.strftime('%H:%M:%S')} - {latest_time.strftime('%H:%M:%S')}
+        </div>
+    '''
+    m.get_root().html.add_child(folium.Element(title_html))
+    
+    # Create a feature group for bus markers
+    bus_locations = folium.FeatureGroup(name="Bus Locations")
+    
+    # Add markers for each bus location with enhanced information
+    for idx, row in locations_df.iterrows():
+        # Create detailed popup text
+        popup_text = f"""
+        <b>Bus Details:</b><br>
+        Time: {row['recorded_at_time'].strftime('%H:%M:%S')}<br>
+        Speed: {row['velocity']:.1f} km/h<br>
+        Bearing: {row['bearing']}°<br>
+        Distance from start: {row['distance_from_journey_start']:.1f}m
+        """
+        
+        # Create a circle marker with rotation based on bearing
+        folium.CircleMarker(
+            location=[row['lat'], row['lon']],
+            radius=8,
+            popup=folium.Popup(popup_text, max_width=200),
+            tooltip=f"Click for details",
+            color='blue',
+            fill=True,
+            fill_color='blue',
+            fill_opacity=0.7,
+            weight=2
+        ).add_to(bus_locations)
+        
+        # Add a small line indicating direction (bearing)
+        if pd.notna(row['bearing']):
+            folium.RegularPolygonMarker(
+                location=[row['lat'], row['lon']],
+                number_of_sides=3,
+                radius=4,
+                rotation=row['bearing'],
+                color='red',
+                fill=True,
+                fill_color='red'
+            ).add_to(bus_locations)
+    
+    bus_locations.add_to(m)
+    
+    # Add layer control
+    folium.LayerControl().add_to(m)
+    
+    return m
+
+# Create and display the enhanced map
+bus_map = create_enhanced_bus_locations_map(siri_vehicle_locations_480)
+display(bus_map)
+
+# %% [markdown]
+# The map above shows:
+# - Blue circles represent bus locations
+# - Red triangles indicate the direction (bearing) of the bus
+# - Click on any marker to see detailed information including:
+#   - Timestamp
+#   - Speed
+#   - Bearing (direction)
+#   - Distance from journey start
+#
+# The time range of the data is shown in the top-left corner.
+
+# %%
+# Search for line 56 from Reading station
+# First, get all stops data to find Reading station
+stops = pd.DataFrame(stride.get('/gtfs_stops/list', params={}))
+reading_stops = stops[stops['name'].str.contains('רידינג', na=False)]
+print("Reading station stops:")
+display(reading_stops[['code', 'name', 'city', 'lat', 'lon']])
+
+# Get all route details for line 56 by Metropolin
+route_stops = pd.DataFrame(stride.get('/gtfs_route_stops/list', {
+    'route__route_short_name': 56,
+    'route__agency_name': 'מטרופולין',
+    'date': '2025-01-18'
+}))
+
+# Join with stops data to get stop names
+route_stops = route_stops.merge(stops[['code', 'name']], 
+                              left_on='stop_id', 
+                              right_on='code', 
+                              how='left')
+
+# Group by route and direction to show the first and last stops
+route_details = route_stops.groupby(['route_id', 'direction_id']).agg({
+    'stop_sequence': ['min', 'max']
+}).reset_index()
+
+# Get first and last stops for each direction
+for _, route in route_details.iterrows():
+    direction = "To Terminal" if route['direction_id'] == 0 else "To Origin"
+    first_stop = route_stops[(route_stops['route_id'] == route['route_id']) & 
+                            (route_stops['direction_id'] == route['direction_id']) & 
+                            (route_stops['stop_sequence'] == route['stop_sequence']['min'])]
+    last_stop = route_stops[(route_stops['route_id'] == route['route_id']) & 
+                           (route_stops['direction_id'] == route['direction_id']) & 
+                           (route_stops['stop_sequence'] == route['stop_sequence']['max'])]
+    
+    print(f"\nRoute 56 Direction {direction}:")
+    print(f"First Stop: {first_stop['name'].iloc[0]} ({first_stop['city'].iloc[0]})")
+    print(f"Last Stop: {last_stop['name'].iloc[0]} ({last_stop['city'].iloc[0]})")
+    
+    # Check if Reading station is in this route direction
+    reading_in_route = route_stops[
+        (route_stops['route_id'] == route['route_id']) & 
+        (route_stops['direction_id'] == route['direction_id']) & 
+        (route_stops['name'].str.contains('רידינג', na=False))
+    ]
+    
+    if not reading_in_route.empty:
+        print(f"Reading station is stop #{reading_in_route['stop_sequence'].iloc[0]}")
+        print(f"Stop details: {reading_in_route['name'].iloc[0]} ({reading_in_route['city'].iloc[0]})")
+
+# %%
+
 
 # %%
