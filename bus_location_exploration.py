@@ -90,14 +90,15 @@ siri_ride
 siri_ride_stops = stride.get('/siri_ride_stops/list', {
     'siri_ride_ids': str(siri_ride['id']),
     'order_by': 'order asc',
+    'siri_ride__scheduled_start_time_from': datetime.datetime.combine(chosen_date, datetime.time(), datetime.timezone.utc),
     'expand_related_data': True
 }, pre_requests_callback='print')
 df = pd.DataFrame(siri_ride_stops)
-# df.loc[:, [
-#     'order', 'gtfs_stop__city', 'gtfs_stop__name', 'gtfs_ride_stop__departure_time', 
-#     'nearest_siri_vehicle_location__recorded_at_time'
-# ]]
-df
+df.loc[:, [
+    'order', 'gtfs_stop__city', 'gtfs_stop__name', 'gtfs_ride_stop__departure_time', 
+    'nearest_siri_vehicle_location__recorded_at_time'
+]].head()
+# df.head()
 
 
 

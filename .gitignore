@@ -1,8 +1,3 @@
-# Virtual Environment
-venv/
-env/
-ENV/
-
 # Python
 __pycache__/
 *.py[cod]
@@ -25,12 +20,45 @@ wheels/
 .installed.cfg
 *.egg
 
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
 
-# OS
+# Jupyter
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+profile_default/
+ipython_config.py
+
+# Testing
+.coverage
+.coverage.*
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# MyPy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Misc
 .DS_Store
-Thumbs.db 
+*.log
+logs/
+tmp/
+temp/ 
