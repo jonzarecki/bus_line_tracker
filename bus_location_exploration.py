@@ -47,24 +47,65 @@ pd.options.display.max_colwidth = 1000
 pd.set_option('display.unicode.east_asian_width', True)
 
 # %%
-# Get routes data
-routes = pd.DataFrame(stride.get('/gtfs_routes/list', {'route_short_name':56,
-                                              'date_from': '2025-01-18',
-                                              'date_to':  '2025-01-18'}))
-routes = routes[routes["agency_name"] == "מטרופולין"]
+# Get routes data for line 56 by Metropolin
 
-pp.pprint(routes.to_dict('records'))
+chosen_date = datetime.datetime(2025,2, 10, tzinfo=tz.gettz('Israel'))
+
+gtfs_routes = stride.get('/gtfs_routes/list', {
+    'route_short_name': '56',
+    'agency_name': 'מטרופולין',
+    'date_from': chosen_date.strftime('%Y-%m-%d'),
+    'date_to': chosen_date.strftime('%Y-%m-%d'),
+    'limit': 1000
+})
+
+# gtfs_routes = gtfs_routes[gtfs_routes.apply(lambda x: "רדינג" in x['route_long_name'], axis=1)]
+
+line_56_route_mkt = 23056
+
+pd.DataFrame(gtfs_routes)
+
+
 
 # %%
-# Get SIRI vehicle locations
-siri_vehicle_locations_480 = pd.DataFrame(stride.iterate('/siri_vehicle_locations/list', {
-    'siri_routes__line_ref': '7020',
-    'siri_rides__schedualed_start_time_from': datetime.datetime(2025,1, 18, tzinfo=tz.gettz('Israel')),
-    'siri_rides__schedualed_start_time_to': datetime.datetime(2025,1, 18, tzinfo=tz.gettz('Israel'))+datetime.timedelta(days=1),
-    'order_by': 'recorded_at_time desc'
-}, limit=1000))
+# Get SIRI rides
+siri_rides = stride.get('/siri_rides/list', {
+    'scheduled_start_time_from': datetime.datetime.combine(chosen_date, datetime.time(), datetime.timezone.utc),
+    'scheduled_start_time_to': datetime.datetime.combine(chosen_date, datetime.time(23,59), datetime.timezone.utc),
+    'siri_route__line_refs': ','.join([str(gtfs_route['line_ref']) for gtfs_route in gtfs_routes]),
+    'siri_route__operator_refs': ','.join([str(gtfs_route['operator_ref']) for gtfs_route in gtfs_routes]),
+    'order_by': 'scheduled_start_time asc'
+}, pre_requests_callback='print')
+pd.DataFrame(siri_rides)
 
-print(siri_vehicle_locations_480.shape)
+
+# %%
+
+for siri_ride in siri_rides:
+    if siri_ride['scheduled_start_time'].hour >= 7:
+        break
+siri_ride
+# %%
+# Get stops for the ride
+siri_ride_stops = stride.get('/siri_ride_stops/list', {
+    'siri_ride_ids': str(siri_ride['id']),
+    'order_by': 'order asc',
+    'expand_related_data': True
+}, pre_requests_callback='print')
+df = pd.DataFrame(siri_ride_stops)
+# df.loc[:, [
+#     'order', 'gtfs_stop__city', 'gtfs_stop__name', 'gtfs_ride_stop__departure_time', 
+#     'nearest_siri_vehicle_location__recorded_at_time'
+# ]]
+df
+
+
+
+
+
+
+
+
 
 # %%
 # Helper function for date localization
@@ -80,20 +121,20 @@ def localize_dates(data, dt_columns = None):
     return data
 
 dt_columns = ['recorded_at_time','siri_ride__scheduled_start_time']
-siri_vehicle_locations_480 = localize_dates(siri_vehicle_locations_480, dt_columns)
+siri_vehicle_locations_56 = localize_dates(siri_vehicle_locations_56, dt_columns)
 
-print(siri_vehicle_locations_480.shape)
-print(siri_vehicle_locations_480.head())
+print(siri_vehicle_locations_56.shape)
+print(siri_vehicle_locations_56.head())
 
 # %%
 # Examine the data structure
-print("Dataset shape:", siri_vehicle_locations_480.shape)
+print("Dataset shape:", siri_vehicle_locations_56.shape)
 print("\nColumns in the dataset:")
-for col in sorted(siri_vehicle_locations_480.columns):
+for col in sorted(siri_vehicle_locations_56.columns):
     print(f"- {col}")
 
 print("\nSample data with key information:")
-display(siri_vehicle_locations_480[['lon', 'lat', 'recorded_at_time', 
+display(siri_vehicle_locations_56[['lon', 'lat', 'recorded_at_time', 
                                   'bearing', 'velocity', 'distance_from_journey_start']].head())
 
 # %%
@@ -170,7 +211,7 @@ def create_enhanced_bus_locations_map(locations_df):
     return m
 
 # Create and display the enhanced map
-bus_map = create_enhanced_bus_locations_map(siri_vehicle_locations_480)
+bus_map = create_enhanced_bus_locations_map(siri_vehicle_locations_56)
 display(bus_map)
 
 # %% [markdown]
@@ -188,22 +229,22 @@ display(bus_map)
 # %%
 # Search for line 56 from Reading station
 # First, get all stops data to find Reading station
-stops = pd.DataFrame(stride.get('/gtfs_stops/list', params={}))
-reading_stops = stops[stops['name'].str.contains('רידינג', na=False)]
+stops = pd.DataFrame(stride.get('/gtfs_stops'))
+reading_stops = stops[stops['hebrew_name'].str.contains('רידינג', na=False)]
 print("Reading station stops:")
-display(reading_stops[['code', 'name', 'city', 'lat', 'lon']])
+display(reading_stops[['stop_code', 'hebrew_name', 'city', 'lat', 'lon']])
 
 # Get all route details for line 56 by Metropolin
-route_stops = pd.DataFrame(stride.get('/gtfs_route_stops/list', {
-    'route__route_short_name': 56,
-    'route__agency_name': 'מטרופולין',
+route_stops = pd.DataFrame(stride.get('/gtfs_route_stops', {
+    'route_short_name': '56',
+    'agency_name': 'מטרופולין',
     'date': '2025-01-18'
 }))
 
 # Join with stops data to get stop names
-route_stops = route_stops.merge(stops[['code', 'name']], 
-                              left_on='stop_id', 
-                              right_on='code', 
+route_stops = route_stops.merge(stops[['stop_code', 'hebrew_name', 'city']], 
+                              left_on='stop_code', 
+                              right_on='stop_code', 
                               how='left')
 
 # Group by route and direction to show the first and last stops
@@ -222,19 +263,19 @@ for _, route in route_details.iterrows():
                            (route_stops['stop_sequence'] == route['stop_sequence']['max'])]
     
     print(f"\nRoute 56 Direction {direction}:")
-    print(f"First Stop: {first_stop['name'].iloc[0]} ({first_stop['city'].iloc[0]})")
-    print(f"Last Stop: {last_stop['name'].iloc[0]} ({last_stop['city'].iloc[0]})")
+    print(f"First Stop: {first_stop['hebrew_name'].iloc[0]} ({first_stop['city'].iloc[0]})")
+    print(f"Last Stop: {last_stop['hebrew_name'].iloc[0]} ({last_stop['city'].iloc[0]})")
     
     # Check if Reading station is in this route direction
     reading_in_route = route_stops[
         (route_stops['route_id'] == route['route_id']) & 
         (route_stops['direction_id'] == route['direction_id']) & 
-        (route_stops['name'].str.contains('רידינג', na=False))
+        (route_stops['hebrew_name'].str.contains('רידינג', na=False))
     ]
     
     if not reading_in_route.empty:
         print(f"Reading station is stop #{reading_in_route['stop_sequence'].iloc[0]}")
-        print(f"Stop details: {reading_in_route['name'].iloc[0]} ({reading_in_route['city'].iloc[0]})")
+        print(f"Stop details: {reading_in_route['hebrew_name'].iloc[0]} ({reading_in_route['city'].iloc[0]})")
 
 # %%
 
