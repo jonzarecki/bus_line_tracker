@@ -1,4 +1,5 @@
 """Constants for the Bus Line Tracker integration."""
+
 DOMAIN = "bus_line_tracker"
 
 # Configuration
@@ -29,4 +30,4 @@ ATTR_LAST_UPDATE = "last_update"
 # Units
 SPEED_UNITS = "km/h"
 DISTANCE_UNITS = "m"
-BEARING_UNITS = "°" 
+BEARING_UNITS = "°"

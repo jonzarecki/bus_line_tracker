@@ -1,10 +1,10 @@
 """Test the Bus Line Tracker coordinator."""
-from unittest.mock import patch, MagicMock
+
 from datetime import timedelta
+from unittest.mock import patch
 
 import pytest
 from homeassistant.core import HomeAssistant
-from homeassistant.util import dt as dt_util
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import UpdateFailed
 
@@ -13,9 +13,8 @@ from custom_components.bus_line_tracker import (
     async_setup_entry,
 )
 from custom_components.bus_line_tracker.const import (
-    DOMAIN,
     CONF_UPDATE_INTERVAL,
-    DEFAULT_UPDATE_INTERVAL,
+    DOMAIN,
 )
 
 from .test_config_flow import MockConfigEntry
@@ -65,9 +64,7 @@ async def test_coordinator_update_failure(hass: HomeAssistant):
 
     # Mock failed data update
     error = UpdateFailed("API Error")
-    with patch.object(
-        coordinator, "_async_update_data", side_effect=error
-    ):
+    with patch.object(coordinator, "_async_update_data", side_effect=error):
         await coordinator.async_refresh()
         assert coordinator.last_update_success is False
         assert coordinator.data is None
@@ -132,4 +129,4 @@ async def test_update_interval_change(hass: HomeAssistant):
         update_interval=timedelta(seconds=60),
     )
 
-    assert coordinator.update_interval == timedelta(seconds=60) 
+    assert coordinator.update_interval == timedelta(seconds=60)

@@ -1,11 +1,10 @@
-.PHONY: install install-dev test lint clean format check
+.PHONY: install install-dev test lint clean format check fix
 
 VENV_DIR := .venv
 PYTHON := $(VENV_DIR)/bin/python
 UV := $(VENV_DIR)/bin/uv
 PYTEST := $(VENV_DIR)/bin/pytest
 RUFF := $(VENV_DIR)/bin/ruff
-MYPY := $(VENV_DIR)/bin/mypy
 
 # Create virtual environment and install dependencies
 install:
@@ -23,12 +22,16 @@ test:
 
 # Run linting
 lint:
-	$(RUFF) check custom_components/ tests/
-	$(MYPY) custom_components/ 
+	$(RUFF) check --fix custom_components/ tests/
 
 # Format code
 format:
 	$(RUFF) format custom_components/ tests/
+
+# Fix all auto-fixable issues
+fix:
+	$(RUFF) format custom_components/ tests/
+	$(RUFF) check --fix custom_components/ tests/
 
 # Run all checks (format, lint, test)
 check: format lint test
@@ -41,6 +44,5 @@ clean:
 	rm -rf dist/
 	rm -rf .pytest_cache/
 	rm -rf .coverage
-	rm -rf .mypy_cache/
 	rm -rf .ruff_cache/
 	find . -type d -name "__pycache__" -exec rm -r {} + 

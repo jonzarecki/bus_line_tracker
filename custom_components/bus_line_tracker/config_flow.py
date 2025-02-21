@@ -1,23 +1,20 @@
 """Config flow for Bus Line Tracker integration."""
-import re
+
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.const import CONF_NAME
 from homeassistant.core import callback
 
 from .const import (
-    DOMAIN,
-    CONF_UPDATE_INTERVAL,
-    CONF_ROUTES,
-    CONF_ROUTE_MKT,
-    CONF_FILTER_NAME,
     CONF_DIRECTION,
-    CONF_REFERENCE_POINT,
-    CONF_WALKING_TIME,
+    CONF_FILTER_NAME,
     CONF_LAT,
     CONF_LON,
+    CONF_ROUTE_MKT,
+    CONF_UPDATE_INTERVAL,
+    CONF_WALKING_TIME,
     DEFAULT_UPDATE_INTERVAL,
     DEFAULT_WALKING_TIME,
+    DOMAIN,
 )
 
 # Validation constants
@@ -70,10 +67,7 @@ class BusLineTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     errors[CONF_DIRECTION] = "invalid_direction"
 
             if not errors:
-                return self.async_create_entry(
-                    title=f"Bus Line {user_input[CONF_ROUTE_MKT]}",
-                    data=user_input
-                )
+                return self.async_create_entry(title=f"Bus Line {user_input[CONF_ROUTE_MKT]}", data=user_input)
 
         return self.async_show_form(
             step_id="user",
@@ -84,14 +78,8 @@ class BusLineTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     vol.Optional(CONF_DIRECTION): str,
                     vol.Optional(CONF_LAT): float,
                     vol.Optional(CONF_LON): float,
-                    vol.Optional(
-                        CONF_WALKING_TIME,
-                        default=DEFAULT_WALKING_TIME
-                    ): int,
-                    vol.Optional(
-                        CONF_UPDATE_INTERVAL,
-                        default=DEFAULT_UPDATE_INTERVAL
-                    ): int,
+                    vol.Optional(CONF_WALKING_TIME, default=DEFAULT_WALKING_TIME): int,
+                    vol.Optional(CONF_UPDATE_INTERVAL, default=DEFAULT_UPDATE_INTERVAL): int,
                 }
             ),
             errors=errors,
@@ -132,15 +120,11 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
         options = {
             vol.Optional(
                 CONF_UPDATE_INTERVAL,
-                default=self.config_entry.options.get(
-                    CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
-                ),
+                default=self.config_entry.options.get(CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL),
             ): int,
             vol.Optional(
                 CONF_WALKING_TIME,
-                default=self.config_entry.options.get(
-                    CONF_WALKING_TIME, DEFAULT_WALKING_TIME
-                ),
+                default=self.config_entry.options.get(CONF_WALKING_TIME, DEFAULT_WALKING_TIME),
             ): int,
         }
 
@@ -148,4 +132,4 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             step_id="init",
             data_schema=vol.Schema(options),
             errors=errors,
-        ) 
+        )

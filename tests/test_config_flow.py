@@ -1,40 +1,27 @@
 """Test the Bus Line Tracker config flow."""
+
 from unittest.mock import patch
 
 import pytest
 from homeassistant import config_entries, data_entry_flow
 from homeassistant.core import HomeAssistant
-from homeassistant.config_entries import ConfigEntry
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.bus_line_tracker.const import (
-    DOMAIN,
-    CONF_ROUTE_MKT,
-    CONF_FILTER_NAME,
     CONF_DIRECTION,
+    CONF_FILTER_NAME,
     CONF_LAT,
     CONF_LON,
-    CONF_WALKING_TIME,
+    CONF_ROUTE_MKT,
     CONF_UPDATE_INTERVAL,
-)
-
-from custom_components.bus_line_tracker.config_flow import (
-    MIN_UPDATE_INTERVAL,
-    MAX_UPDATE_INTERVAL,
-    MIN_WALKING_TIME,
-    MAX_WALKING_TIME,
-    MIN_LAT,
-    MAX_LAT,
-    MIN_LON,
-    MAX_LON,
+    CONF_WALKING_TIME,
+    DOMAIN,
 )
 
 
 async def test_successful_config_flow(hass):
     """Test a successful config flow."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
 
     assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["step_id"] == "user"
@@ -76,9 +63,7 @@ async def test_successful_config_flow(hass):
 )
 async def test_invalid_inputs(hass, field, value, error):
     """Test invalid config flow inputs."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": config_entries.SOURCE_USER})
 
     assert result["type"] == data_entry_flow.FlowResultType.FORM
     assert result["step_id"] == "user"
@@ -141,4 +126,4 @@ async def test_options_flow(hass: HomeAssistant) -> None:
         assert config_entry.options == {
             CONF_UPDATE_INTERVAL: 60,
             CONF_WALKING_TIME: 10,
-        } 
+        }

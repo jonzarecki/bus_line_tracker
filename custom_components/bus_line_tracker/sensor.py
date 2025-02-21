@@ -1,17 +1,14 @@
 """Support for Bus Line Tracker sensors."""
+
 from __future__ import annotations
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
-    SensorStateClass,
     SensorEntityDescription,
+    SensorStateClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import (
-    UnitOfLength,
-    UnitOfSpeed,
-)
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import (
@@ -19,17 +16,15 @@ from homeassistant.helpers.update_coordinator import (
 )
 
 from .const import (
-    DOMAIN,
-    ATTR_LOCATION,
-    ATTR_SPEED,
     ATTR_BEARING,
     ATTR_DISTANCE_FROM_START,
     ATTR_DISTANCE_FROM_STATION,
-    ATTR_VEHICLE_REF,
-    ATTR_LAST_UPDATE,
-    SPEED_UNITS,
-    DISTANCE_UNITS,
+    ATTR_LOCATION,
+    ATTR_SPEED,
     BEARING_UNITS,
+    DISTANCE_UNITS,
+    DOMAIN,
+    SPEED_UNITS,
 )
 
 
@@ -153,4 +148,4 @@ class BusDistanceFromStationSensor(BusLineSensorBase):
         """Return the state of the sensor."""
         if self.coordinator.data:
             return self.coordinator.data.get(ATTR_DISTANCE_FROM_STATION)
-        return None 
+        return None

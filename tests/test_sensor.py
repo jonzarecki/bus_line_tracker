@@ -1,37 +1,37 @@
 """Test the Bus Line Tracker sensors."""
-from unittest.mock import patch, MagicMock
-from datetime import timedelta
+
+from unittest.mock import MagicMock, patch
 
 import pytest
-from homeassistant.const import UnitOfLength, UnitOfSpeed
 from homeassistant.core import HomeAssistant
-from homeassistant.util import dt as dt_util
-from pytest_homeassistant_custom_component.common import mock_platform, MockPlatform
+from pytest_homeassistant_custom_component.common import MockPlatform, mock_platform
 
+from custom_components.bus_line_tracker import async_setup_entry
 from custom_components.bus_line_tracker.const import (
-    DOMAIN,
-    CONF_ROUTE_MKT,
-    ATTR_LOCATION,
-    ATTR_SPEED,
     ATTR_BEARING,
     ATTR_DISTANCE_FROM_START,
     ATTR_DISTANCE_FROM_STATION,
-    SPEED_UNITS,
-    DISTANCE_UNITS,
+    ATTR_LOCATION,
+    ATTR_SPEED,
     BEARING_UNITS,
+    CONF_ROUTE_MKT,
+    DISTANCE_UNITS,
+    DOMAIN,
+    SPEED_UNITS,
 )
 from custom_components.bus_line_tracker.sensor import (
-    BusLocationSensor,
-    BusSpeedSensor,
     BusBearingSensor,
     BusDistanceFromStartSensor,
     BusDistanceFromStationSensor,
+    BusLocationSensor,
+    BusSpeedSensor,
+)
+from custom_components.bus_line_tracker.sensor import (
     async_setup_entry as sensor_async_setup_entry,
 )
-from custom_components.bus_line_tracker import async_setup_entry
 
-from .test_config_flow import MockConfigEntry
 from .conftest import async_mock_coro
+from .test_config_flow import MockConfigEntry
 
 
 @pytest.fixture
@@ -164,4 +164,4 @@ def test_sensor_unavailable_state(mock_coordinator):
     assert distance_start_sensor.state is None
 
     distance_station_sensor = BusDistanceFromStationSensor(mock_coordinator, config_entry)
-    assert distance_station_sensor.state is None 
+    assert distance_station_sensor.state is None

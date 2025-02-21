@@ -1,17 +1,16 @@
 """The Bus Line Tracker integration."""
-import asyncio
+
 import logging
 from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import (
-    DOMAIN,
     DEFAULT_UPDATE_INTERVAL,
+    DOMAIN,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -23,9 +22,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Bus Line Tracker from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
-    update_interval = entry.options.get(
-        "update_interval", DEFAULT_UPDATE_INTERVAL
-    )
+    update_interval = entry.options.get("update_interval", DEFAULT_UPDATE_INTERVAL)
 
     coordinator = BusLineDataCoordinator(
         hass,
@@ -75,4 +72,4 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
             return {}
         except Exception as error:
             _LOGGER.error("Error fetching bus_line_tracker data: %s", error)
-            raise UpdateFailed(str(error)) 
+            raise UpdateFailed(str(error)) from error

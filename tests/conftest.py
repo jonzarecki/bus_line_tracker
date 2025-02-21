@@ -1,10 +1,9 @@
 """Test fixtures."""
+
 from unittest.mock import MagicMock, patch
-import asyncio
 
 import pytest
 from pytest_homeassistant_custom_component.common import (
-    MockConfigEntry,
     MockModule,
     MockPlatform,
     mock_integration,
@@ -58,4 +57,4 @@ def mock_bus_data():
         "ATTR_BEARING": 180.0,
         "ATTR_DISTANCE_FROM_START": 5.0,
         "ATTR_DISTANCE_FROM_STATION": 0.5,
-    } 
+    }
