@@ -6,7 +6,8 @@
   "dependencies": [],
   "codeowners": ["@jonzarecki"],
   "requirements": [
-    "israel_bus_locator @ git+https://github.com/jonzarecki/israel_bus_locator.git"
+    "israel_bus_locator @ git+https://github.com/jonzarecki/israel_bus_locator.git",
+    "folium>=0.15.0"
   ],
   "config_flow": true,
   "iot_class": "cloud_polling",
