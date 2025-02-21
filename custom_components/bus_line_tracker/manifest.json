@@ -2,6 +2,7 @@
   "domain": "bus_line_tracker",
   "name": "Israel Bus Line Tracker",
   "documentation": "https://github.com/jonzarecki/israel_bus_line_tracker",
+  "issue_tracker": "https://github.com/jonzarecki/israel_bus_line_tracker/issues",
   "dependencies": [],
   "codeowners": ["@jonzarecki"],
   "requirements": [
