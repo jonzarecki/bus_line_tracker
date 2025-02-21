@@ -3,6 +3,10 @@ from unittest.mock import patch
 
 import pytest
 from homeassistant import config_entries, data_entry_flow
+from homeassistant.core import HomeAssistant
+from homeassistant.config_entries import ConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry
+
 from custom_components.bus_line_tracker.const import (
     DOMAIN,
     CONF_ROUTE_MKT,
@@ -24,53 +28,6 @@ from custom_components.bus_line_tracker.config_flow import (
     MIN_LON,
     MAX_LON,
 )
-
-
-class MockConfigEntry:
-    """Mock config entry."""
-
-    def __init__(self, *, domain=None, data=None, options=None, entry_id=None, title=None, source=None, unique_id=None):
-        """Initialize mock config entry."""
-        self.domain = domain or "bus_line_tracker"
-        self.data = data or {}
-        self._options = options or {}
-        self.entry_id = entry_id or "test_entry_id"
-        self.title = title or "Test Title"
-        self.source = source or "user"
-        self._unique_id = unique_id or "test_unique_id"
-        self.state = "not_loaded"
-        self.disabled_by = None
-        self._version = 1
-
-    @property
-    def unique_id(self):
-        """Return unique ID."""
-        return self._unique_id
-
-    @property
-    def options(self):
-        """Return options."""
-        return self._options
-
-    @options.setter
-    def options(self, value):
-        """Set options."""
-        self._options = value
-
-    @property
-    def version(self):
-        """Return version."""
-        return self._version
-
-    async def add_to_hass(self, hass):
-        """Add entry to hass."""
-        pass
-
-    async def async_update_entry(self, **kwargs):
-        """Update entry."""
-        for key, value in kwargs.items():
-            setattr(self, key, value)
-        return self
 
 
 async def test_successful_config_flow(hass):
@@ -147,17 +104,18 @@ async def test_invalid_inputs(hass, field, value, error):
     assert result["errors"][field] == error
 
 
-async def test_options_flow(hass):
+async def test_options_flow(hass: HomeAssistant) -> None:
     """Test config flow options."""
     config_entry = MockConfigEntry(
         domain=DOMAIN,
+        entry_id="test_1",
         data={},
         options={
             CONF_UPDATE_INTERVAL: 30,
             CONF_WALKING_TIME: 5,
         },
     )
-    config_entry.add_to_hass(hass)
+    await config_entry.add_to_hass(hass)
 
     result = await hass.config_entries.options.async_init(config_entry.entry_id)
 
@@ -173,5 +131,7 @@ async def test_options_flow(hass):
     )
 
     assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
-    assert config_entry.options[CONF_UPDATE_INTERVAL] == 60
-    assert config_entry.options[CONF_WALKING_TIME] == 10 
+    assert config_entry.options == {
+        CONF_UPDATE_INTERVAL: 60,
+        CONF_WALKING_TIME: 10,
+    } 

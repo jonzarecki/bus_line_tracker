@@ -141,28 +141,29 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
             if not errors:
                 return self.async_create_entry(title="", data=user_input)
 
+        options = {
+            vol.Optional(
+                CONF_UPDATE_INTERVAL,
+                default=self.config_entry.options.get(
+                    CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
+                ),
+            ): vol.All(
+                vol.Coerce(int),
+                vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL),
+            ),
+            vol.Optional(
+                CONF_WALKING_TIME,
+                default=self.config_entry.options.get(
+                    CONF_WALKING_TIME, DEFAULT_WALKING_TIME
+                ),
+            ): vol.All(
+                vol.Coerce(int),
+                vol.Range(min=MIN_WALKING_TIME, max=MAX_WALKING_TIME),
+            ),
+        }
+
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
-                {
-                    vol.Optional(
-                        CONF_UPDATE_INTERVAL,
-                        default=self.config_entry.options.get(
-                            CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
-                        ),
-                    ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL)
-                    ),
-                    vol.Optional(
-                        CONF_WALKING_TIME,
-                        default=self.config_entry.options.get(
-                            CONF_WALKING_TIME, DEFAULT_WALKING_TIME
-                        ),
-                    ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(min=MIN_WALKING_TIME, max=MAX_WALKING_TIME)
-                    ),
-                }
-            ),
+            data_schema=vol.Schema(options),
+            errors=errors,
         ) 

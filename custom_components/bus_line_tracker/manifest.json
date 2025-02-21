@@ -1,11 +1,11 @@
 {
-  "domain": "bus_line_tracker",
-  "name": "Bus Line Tracker",
-  "documentation": "https://github.com/jonzarecki/bus_ha_sensor",
+  "domain": "israel_bus_line_tracker",
+  "name": "Israel Bus Line Tracker",
+  "documentation": "https://github.com/jonzarecki/israel_bus_line_tracker",
   "dependencies": [],
   "codeowners": ["@jonzarecki"],
   "requirements": [
-    "israel_bus_locator @ file://../../israel_bus_locator"
+    "israel_bus_locator @ git+https://github.com/jonzarecki/israel_bus_locator.git"
   ],
   "config_flow": true,
   "iot_class": "cloud_polling",

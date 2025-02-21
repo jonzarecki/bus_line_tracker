@@ -1,2 +1,2 @@
 homeassistant>=2024.1.0
-israel_bus_locator @ file://./israel_bus_locator 
+israel_bus_locator @ git+https://github.com/jonzarecki/israel_bus_locator.git

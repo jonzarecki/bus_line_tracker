@@ -19,16 +19,16 @@ install-dev: install
 
 # Run tests
 test:
-	PYTHONPATH=. $(PYTEST) tests/ israel_bus_locator/tests/ -v --cov=custom_components --cov=israel_bus_locator --cov-report=term-missing
+	PYTHONPATH=. $(PYTEST) tests/  -v --cov=custom_components --cov-report=term-missing
 
 # Run linting
 lint:
-	$(RUFF) check custom_components/ israel_bus_locator/ tests/
-	$(MYPY) custom_components/ israel_bus_locator/
+	$(RUFF) check custom_components/ tests/
+	$(MYPY) custom_components/ 
 
 # Format code
 format:
-	$(RUFF) format custom_components/ israel_bus_locator/ tests/
+	$(RUFF) format custom_components/ tests/
 
 # Run all checks (format, lint, test)
 check: format lint test
