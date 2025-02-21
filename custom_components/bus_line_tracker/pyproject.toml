@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "bus_line_tracker"
+version = "1.0.0"
+description = "Home Assistant integration for tracking bus lines in Israel"
+readme = "../../README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+    { name = "Jon Zarecki", email = "jonzarecki@gmail.com" },
+]
+dependencies = [
+    "homeassistant>=2024.1.0",
+    "israel_bus_locator @ file://../../israel_bus_locator"
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true 

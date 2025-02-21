@@ -1,0 +1,10 @@
+pytest>=7.4.0
+pytest-asyncio>=0.21.1
+pytest-cov>=4.1.0
+pytest-homeassistant-custom-component>=0.13.89
+ruff>=0.2.0
+mypy>=1.8.0
+black>=24.1.0
+homeassistant>=2024.1.0
+folium>=0.15.0
+matplotlib>=3.8.0 

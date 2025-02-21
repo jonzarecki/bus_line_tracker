@@ -1,0 +1,2 @@
+homeassistant>=2024.1.0
+israel_bus_locator @ file://./israel_bus_locator 

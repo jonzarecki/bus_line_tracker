@@ -1,0 +1,43 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Bus Line Tracker Configuration",
+                "description": "Set up a bus line to track",
+                "data": {
+                    "route_mkt": "Route Market ID",
+                    "filter_name": "Route Name Filter",
+                    "direction": "Direction (1 or 2)",
+                    "lat": "Reference Point Latitude",
+                    "lon": "Reference Point Longitude",
+                    "walking_time": "Walking Time to Station (minutes)",
+                    "update_interval": "Update Interval (seconds)"
+                }
+            }
+        },
+        "error": {
+            "invalid_route_mkt": "Route Market ID must be a number",
+            "invalid_lat": "Latitude must be between 29.0 and 34.0",
+            "invalid_lon": "Longitude must be between 34.0 and 36.0",
+            "invalid_walking_time": "Walking time must be between 1 and 60 minutes",
+            "invalid_update_interval": "Update interval must be between 10 and 3600 seconds",
+            "invalid_direction": "Direction must be either 1 or 2"
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Bus Line Tracker Options",
+                "description": "Update tracking settings",
+                "data": {
+                    "walking_time": "Walking Time to Station (minutes)",
+                    "update_interval": "Update Interval (seconds)"
+                }
+            }
+        },
+        "error": {
+            "invalid_walking_time": "Walking time must be between 1 and 60 minutes",
+            "invalid_update_interval": "Update interval must be between 10 and 3600 seconds"
+        }
+    }
+} 
