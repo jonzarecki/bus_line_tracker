@@ -7,7 +7,9 @@
   "codeowners": ["@jonzarecki"],
   "requirements": [
     "israel_bus_locator @ git+https://github.com/jonzarecki/israel_bus_locator.git",
-    "folium>=0.15.0"
+    "folium>=0.15.0",
+    "matplotlib>=3.8.0",
+    "python-dateutil>=2.8.0"
   ],
   "config_flow": true,
   "iot_class": "cloud_polling",
