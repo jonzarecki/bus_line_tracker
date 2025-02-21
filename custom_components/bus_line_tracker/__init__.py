@@ -126,8 +126,8 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
                 return {}
 
             # log head and tail of vehicle_locations
-            _LOGGER.warning(f"Vehicle locations head: {vehicle_locations.head()}")
-            _LOGGER.warning(f"Vehicle locations tail: {vehicle_locations.tail()}")
+            _LOGGER.error(f"Vehicle locations head: {vehicle_locations.head()}")
+            _LOGGER.error(f"Vehicle locations tail: {vehicle_locations.tail()}")
 
             # Get current distances if reference point is set
             if self._ref_point:
@@ -151,7 +151,7 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
                     "distance_from_start": latest_ride.get("distance_from_journey_start", 0),
                     "distance_from_station": latest_ride["current_distance"],
                     "vehicle_ref": latest_ride["vehicle_ref"],
-                    "last_update": latest_ride["last_update"],
+                    # "last_update": latest_ride["last_update"],
                 }
             
             # If no reference point, just return the latest location data
@@ -163,7 +163,7 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
                 "distance_from_start": latest_location.get("distance_from_journey_start", 0),
                 "distance_from_station": None,
                 "vehicle_ref": latest_location["vehicle_ref"],
-                "last_update": latest_location["recorded_at_time"],
+                # "last_update": latest_location["recorded_at_time"],
             }
             
         except Exception as error:
