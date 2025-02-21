@@ -74,4 +74,5 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
             # TODO: Implement actual data fetching from SIRI API
             return {}
         except Exception as error:
-            raise UpdateFailed(f"Error communicating with API: {error}") 
+            _LOGGER.error("Error fetching bus_line_tracker data: %s", error)
+            raise UpdateFailed(str(error)) 

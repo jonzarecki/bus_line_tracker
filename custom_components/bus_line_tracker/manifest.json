@@ -1,5 +1,5 @@
 {
-  "domain": "israel_bus_line_tracker",
+  "domain": "bus_line_tracker",
   "name": "Israel Bus Line Tracker",
   "documentation": "https://github.com/jonzarecki/israel_bus_line_tracker",
   "dependencies": [],

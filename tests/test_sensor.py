@@ -6,6 +6,7 @@ import pytest
 from homeassistant.const import UnitOfLength, UnitOfSpeed
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
+from pytest_homeassistant_custom_component.common import mock_platform, MockPlatform
 
 from custom_components.bus_line_tracker.const import (
     DOMAIN,
@@ -25,9 +26,12 @@ from custom_components.bus_line_tracker.sensor import (
     BusBearingSensor,
     BusDistanceFromStartSensor,
     BusDistanceFromStationSensor,
+    async_setup_entry as sensor_async_setup_entry,
 )
+from custom_components.bus_line_tracker import async_setup_entry
 
 from .test_config_flow import MockConfigEntry
+from .conftest import async_mock_coro
 
 
 @pytest.fixture
@@ -52,33 +56,55 @@ async def test_sensor_creation(hass: HomeAssistant):
     )
     config_entry.add_to_hass(hass)
 
-    with patch(
-        "custom_components.bus_line_tracker.BusLineDataCoordinator"
-    ) as mock_coordinator_class:
-        mock_coordinator = mock_coordinator_class.return_value
-        mock_coordinator.data = {}
+    mock_coordinator = MagicMock()
+    mock_coordinator.data = {
+        ATTR_LOCATION: "32.0865,34.7876",
+        ATTR_SPEED: 35.5,
+        ATTR_BEARING: 180,
+        ATTR_DISTANCE_FROM_START: 1500,
+        ATTR_DISTANCE_FROM_STATION: 500,
+    }
+    mock_coordinator.async_config_entry_first_refresh = MagicMock(side_effect=async_mock_coro)
+    mock_coordinator.async_request_refresh = MagicMock(side_effect=async_mock_coro)
+    mock_coordinator.async_refresh = MagicMock(side_effect=async_mock_coro)
+    mock_coordinator.async_update_listeners = MagicMock(side_effect=async_mock_coro)
 
-        await hass.config_entries.async_setup(config_entry.entry_id)
+    # Mock the sensor platform
+    mock_sensor_platform = MockPlatform()
+    mock_sensor_platform.async_setup_entry = sensor_async_setup_entry
+    mock_platform(hass, f"{DOMAIN}.sensor", mock_sensor_platform)
+
+    with patch(
+        "custom_components.bus_line_tracker.BusLineDataCoordinator",
+        return_value=mock_coordinator,
+    ):
+        # Set up the component
+        assert await async_setup_entry(hass, config_entry)
         await hass.async_block_till_done()
 
         # Verify all sensors are created
-        state = hass.states.get("sensor.bus_line_123_location")
+        state = hass.states.get("sensor.bus_location")
         assert state is not None
+        assert state.state == "32.0865,34.7876"
 
-        state = hass.states.get("sensor.bus_line_123_speed")
+        state = hass.states.get("sensor.bus_speed")
         assert state is not None
+        assert state.state == "35.5"
         assert state.attributes["unit_of_measurement"] == SPEED_UNITS
 
-        state = hass.states.get("sensor.bus_line_123_bearing")
+        state = hass.states.get("sensor.bus_bearing")
         assert state is not None
+        assert state.state == "180"
         assert state.attributes["unit_of_measurement"] == BEARING_UNITS
 
-        state = hass.states.get("sensor.bus_line_123_distance_from_start")
+        state = hass.states.get("sensor.distance_from_start")
         assert state is not None
+        assert state.state == "1500"
         assert state.attributes["unit_of_measurement"] == DISTANCE_UNITS
 
-        state = hass.states.get("sensor.bus_line_123_distance_from_station")
+        state = hass.states.get("sensor.distance_from_station")
         assert state is not None
+        assert state.state == "500"
         assert state.attributes["unit_of_measurement"] == DISTANCE_UNITS
 
 

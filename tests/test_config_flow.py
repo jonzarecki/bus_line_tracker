@@ -101,7 +101,7 @@ async def test_invalid_inputs(hass, field, value, error):
     )
 
     assert result["type"] == data_entry_flow.FlowResultType.FORM
-    assert result["errors"][field] == error
+    assert result["errors"] == {field: error}
 
 
 async def test_options_flow(hass: HomeAssistant) -> None:
@@ -115,23 +115,30 @@ async def test_options_flow(hass: HomeAssistant) -> None:
             CONF_WALKING_TIME: 5,
         },
     )
-    await config_entry.add_to_hass(hass)
 
-    result = await hass.config_entries.options.async_init(config_entry.entry_id)
+    with patch(
+        "custom_components.bus_line_tracker.BusLineDataCoordinator._async_update_data",
+        return_value={},
+    ):
+        config_entry.add_to_hass(hass)
+        await hass.config_entries.async_setup(config_entry.entry_id)
+        await hass.async_block_till_done()
 
-    assert result["type"] == data_entry_flow.FlowResultType.FORM
-    assert result["step_id"] == "init"
+        result = await hass.config_entries.options.async_init(config_entry.entry_id)
 
-    result = await hass.config_entries.options.async_configure(
-        result["flow_id"],
-        user_input={
+        assert result["type"] == data_entry_flow.FlowResultType.FORM
+        assert result["step_id"] == "init"
+
+        result = await hass.config_entries.options.async_configure(
+            result["flow_id"],
+            user_input={
+                CONF_UPDATE_INTERVAL: 60,
+                CONF_WALKING_TIME: 10,
+            },
+        )
+
+        assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
+        assert config_entry.options == {
             CONF_UPDATE_INTERVAL: 60,
             CONF_WALKING_TIME: 10,
-        },
-    )
-
-    assert result["type"] == data_entry_flow.FlowResultType.CREATE_ENTRY
-    assert config_entry.options == {
-        CONF_UPDATE_INTERVAL: 60,
-        CONF_WALKING_TIME: 10,
-    } 
+        } 

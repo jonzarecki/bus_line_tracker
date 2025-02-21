@@ -81,29 +81,17 @@ class BusLineTrackerConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 {
                     vol.Required(CONF_ROUTE_MKT): str,
                     vol.Optional(CONF_FILTER_NAME): str,
-                    vol.Optional(CONF_DIRECTION): vol.In(["1", "2"]),
-                    vol.Optional(CONF_LAT): vol.All(
-                        vol.Coerce(float),
-                        vol.Range(min=MIN_LAT, max=MAX_LAT)
-                    ),
-                    vol.Optional(CONF_LON): vol.All(
-                        vol.Coerce(float),
-                        vol.Range(min=MIN_LON, max=MAX_LON)
-                    ),
+                    vol.Optional(CONF_DIRECTION): str,
+                    vol.Optional(CONF_LAT): float,
+                    vol.Optional(CONF_LON): float,
                     vol.Optional(
                         CONF_WALKING_TIME,
                         default=DEFAULT_WALKING_TIME
-                    ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(min=MIN_WALKING_TIME, max=MAX_WALKING_TIME)
-                    ),
+                    ): int,
                     vol.Optional(
                         CONF_UPDATE_INTERVAL,
                         default=DEFAULT_UPDATE_INTERVAL
-                    ): vol.All(
-                        vol.Coerce(int),
-                        vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL)
-                    ),
+                    ): int,
                 }
             ),
             errors=errors,
@@ -147,19 +135,13 @@ class OptionsFlowHandler(config_entries.OptionsFlow):
                 default=self.config_entry.options.get(
                     CONF_UPDATE_INTERVAL, DEFAULT_UPDATE_INTERVAL
                 ),
-            ): vol.All(
-                vol.Coerce(int),
-                vol.Range(min=MIN_UPDATE_INTERVAL, max=MAX_UPDATE_INTERVAL),
-            ),
+            ): int,
             vol.Optional(
                 CONF_WALKING_TIME,
                 default=self.config_entry.options.get(
                     CONF_WALKING_TIME, DEFAULT_WALKING_TIME
                 ),
-            ): vol.All(
-                vol.Coerce(int),
-                vol.Range(min=MIN_WALKING_TIME, max=MAX_WALKING_TIME),
-            ),
+            ): int,
         }
 
         return self.async_show_form(

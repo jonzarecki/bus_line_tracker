@@ -64,11 +64,14 @@ async def test_coordinator_update_failure(hass: HomeAssistant):
     )
 
     # Mock failed data update
+    error = UpdateFailed("API Error")
     with patch.object(
-        coordinator, "_async_update_data", side_effect=Exception("API Error")
+        coordinator, "_async_update_data", side_effect=error
     ):
-        with pytest.raises(UpdateFailed):
-            await coordinator.async_refresh()
+        await coordinator.async_refresh()
+        assert coordinator.last_update_success is False
+        assert coordinator.data is None
+        assert coordinator.last_exception == error
 
 
 async def test_coordinator_setup(hass: HomeAssistant):
