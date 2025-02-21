@@ -19,7 +19,7 @@ install-dev: install
 # Run tests
 test:
 	PYTHONPATH=. $(PYTEST) tests/  -v --cov=custom_components --cov-report=term-missing
-
+	PYTHONPATH=. $(PYTHON) tests/test_live_api.py
 # Run linting
 lint:
 	$(RUFF) check --fix custom_components/ tests/
