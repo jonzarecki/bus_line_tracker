@@ -5,15 +5,16 @@ A focused Home Assistant integration that helps you catch your bus on time by tr
 ## Features
 
 ### Real-time Bus Tracking
-- ⏰ Precise arrival times for your specific bus lines
-- ⌚ Time until next arrival
+- 📍 Live bus positions with latitude and longitude
+- 🚗 Vehicle speed and bearing information
+- 📏 Distance tracking from journey start
 - 🔄 Regular updates (every 30 seconds)
 
 ### Smart Notifications
 - ⏰ "Time to leave" notifications based on:
-  - Real-time bus location
-  - Historical delay patterns
-  - Current traffic conditions
+  - Real-time bus location and bearing
+  - Distance from journey start
+  - Current vehicle speed
 - 🚨 Alerts for:
   - Service disruptions
   - Significant delays
@@ -21,18 +22,25 @@ A focused Home Assistant integration that helps you catch your bus on time by tr
 
 ### Available Sensors
 For each bus line at your configured stop:
-- Next arrival time
-- Time until arrival
-- Bus location (distance from station)
-- Delay status
-- Historical reliability score
-- Crowding information (when available)
+- `bus_[line]_location`: Current bus location (lat, lon)
+- `bus_[line]_speed`: Current vehicle speed in km/h
+- `bus_[line]_bearing`: Vehicle direction in degrees
+- `bus_[line]_distance_from_start`: Distance from journey start in meters
+- `bus_[line]_distance_from_station`: Distance from configured reference point
+- `bus_[line]_vehicle_ref`: Vehicle reference ID
+- `bus_[line]_last_update`: Timestamp of last update
 
 ## Prerequisites
 - Home Assistant installation
-- API key from the Israeli Ministry of Transport
+- Access to Israeli Ministry of Transport's SIRI API
 - Internet connection
 - HACS (Home Assistant Community Store) installed
+- Required Python packages (automatically installed):
+  - pandas
+  - folium
+  - stride
+  - matplotlib
+  - dateutil
 
 ## Installation
 
@@ -56,14 +64,38 @@ Configure through Home Assistant UI or YAML:
 
 ```yaml
 bus_line_tracker:
-  api_key: !secret mot_api_key
-  stations:
-    - station_id: "12345"
-      lines: 
-        - "11"
-        - "24A"
-      walking_time: 7  # minutes to reach station
+  # General settings
   update_interval: 30  # seconds
+
+  # Route configurations
+  routes:
+    - route_mkt: "23056"  # Route market ID (e.g., for line 56)
+      filter_name: "רדינג"  # Optional: Filter by route name
+      direction: "1"  # Optional: Filter by direction
+      reference_point:  # Optional: Reference point for distance calculations
+        lat: 32.090260
+        lon: 34.782621
+      walking_time: 7  # minutes to reach station
+
+  # Time windows for tracking
+  time_windows:
+    - name: "morning"
+      start_time: "07:00:00"
+      end_time: "10:00:00"
+      weekdays:
+        - mon
+        - tue
+        - wed
+        - thu
+        - fri
+    - name: "evening"
+      start_time: "16:00:00"
+      end_time: "19:00:00"
+      weekdays:
+        - mon
+        - tue
+        - wed
+        - thu
 ```
 
 ## Usage Examples
@@ -74,8 +106,8 @@ automation:
   - alias: "Bus Departure Notification"
     trigger:
       - platform: numeric_state
-        entity_id: sensor.bus_11_next_arrival
-        below: 10  # minutes
+        entity_id: sensor.bus_56_distance_from_station
+        below: 2000  # meters
     condition:
       - condition: time
         after: '07:00:00'
@@ -89,7 +121,10 @@ automation:
     action:
       - service: notify.mobile_app
         data:
-          message: "Bus 11 arriving in {{ states('sensor.bus_11_next_arrival') }} minutes. Time to leave!"
+          message: >
+            Bus 56 is {{ states('sensor.bus_56_distance_from_station') }} meters away,
+            moving at {{ states('sensor.bus_56_speed') }} km/h
+            in direction {{ states('sensor.bus_56_bearing') }}°.
 ```
 
 ## Version History
@@ -110,7 +145,9 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgments
 
 - Israeli Ministry of Transport for providing the SIRI API
+- Stride API for data access
 - Home Assistant community for support and inspiration
+- Folium for map visualizations
 
 ## Support
 

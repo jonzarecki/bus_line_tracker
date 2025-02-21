@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 import numpy as np
 import matplotlib.pyplot as plt
 
-from bus_utils import (
+from israel_bus_locator.bus_utils import (
     localize_dates,
     create_enhanced_bus_locations_map,
     get_routes_for_route_mkt,
