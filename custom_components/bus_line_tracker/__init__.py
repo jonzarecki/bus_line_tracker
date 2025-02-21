@@ -124,7 +124,11 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
             if vehicle_locations.empty:
                 _LOGGER.warning("No vehicle locations found")
                 return {}
-            
+
+            # log head and tail of vehicle_locations
+            _LOGGER.warning(f"Vehicle locations head: {vehicle_locations.head()}")
+            _LOGGER.warning(f"Vehicle locations tail: {vehicle_locations.tail()}")
+
             # Get current distances if reference point is set
             if self._ref_point:
                 current_distances = await self.hass.async_add_executor_job(
