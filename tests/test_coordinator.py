@@ -1,7 +1,8 @@
 """Test the Bus Line Tracker coordinator."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from unittest.mock import patch
+from zoneinfo import ZoneInfo
 
 import pytest
 from homeassistant.core import HomeAssistant
@@ -13,6 +14,7 @@ from custom_components.bus_line_tracker import (
     async_setup_entry,
 )
 from custom_components.bus_line_tracker.const import (
+    CONF_ROUTE_MKT,
     CONF_UPDATE_INTERVAL,
     DOMAIN,
 )
@@ -24,7 +26,7 @@ async def test_coordinator_update_success(hass: HomeAssistant):
     """Test successful data update."""
     config_entry = MockConfigEntry(
         domain=DOMAIN,
-        data={},
+        data={CONF_ROUTE_MKT: "23056"},
         options={CONF_UPDATE_INTERVAL: 30},
     )
 
@@ -41,6 +43,8 @@ async def test_coordinator_update_success(hass: HomeAssistant):
         "bearing": 180,
         "distance_from_start": 1500,
         "distance_from_station": 500,
+        "vehicle_ref": "12345",
+        "last_update": datetime.now(ZoneInfo("Israel")),
     }
 
     with patch.object(coordinator, "_async_update_data", return_value=mock_data):
@@ -52,7 +56,7 @@ async def test_coordinator_update_failure(hass: HomeAssistant):
     """Test failed data update."""
     config_entry = MockConfigEntry(
         domain=DOMAIN,
-        data={},
+        data={CONF_ROUTE_MKT: "23056"},
         options={CONF_UPDATE_INTERVAL: 30},
     )
 
@@ -75,7 +79,7 @@ async def test_coordinator_setup(hass: HomeAssistant):
     """Test coordinator setup."""
     config_entry = MockConfigEntry(
         domain=DOMAIN,
-        data={},
+        data={CONF_ROUTE_MKT: "23056"},
         options={CONF_UPDATE_INTERVAL: 30},
     )
     config_entry.add_to_hass(hass)
@@ -92,7 +96,7 @@ async def test_coordinator_setup(hass: HomeAssistant):
     config_entry2 = MockConfigEntry(
         domain=DOMAIN,
         entry_id="test2",
-        data={},
+        data={CONF_ROUTE_MKT: "23056"},
         options={CONF_UPDATE_INTERVAL: 30},
     )
     config_entry2.add_to_hass(hass)
@@ -109,7 +113,7 @@ async def test_update_interval_change(hass: HomeAssistant):
     """Test update interval changes."""
     config_entry = MockConfigEntry(
         domain=DOMAIN,
-        data={},
+        data={CONF_ROUTE_MKT: "23056"},
         options={CONF_UPDATE_INTERVAL: 30},
     )
 

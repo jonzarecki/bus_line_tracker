@@ -55,7 +55,7 @@ class BusLineSensorBase(CoordinatorEntity, SensorEntity):
         super().__init__(coordinator)
         self._config_entry = config_entry
         self.entity_description = SensorEntityDescription(
-            key=self._attr_name.lower().replace(" ", "_"),
+            key=f"sensor.{self._attr_name.lower().replace(' ', '_')}",
             name=self._attr_name,
             native_unit_of_measurement=self._attr_native_unit_of_measurement,
             device_class=self._attr_device_class,
