@@ -6,7 +6,7 @@
   "dependencies": [],
   "codeowners": ["@jonzarecki"],
   "requirements": [
-    "israel_bus_locator @ git+https://github.com/jonzarecki/israel_bus_locator.git@0550734",
+    "israel_bus_locator @ git+https://github.com/jonzarecki/israel_bus_locator.git@f5a83c0",
     "folium>=0.15.0",
     "matplotlib>=3.8.0",
     "python-dateutil>=2.8.0"
