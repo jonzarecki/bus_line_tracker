@@ -126,12 +126,16 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
         end_time = now
         start_time = end_time - timedelta(hours=1)
         
-        vehicle_locations = await self.hass.async_add_executor_job(
-            get_vehicle_locations,
-            line_ref,
-            start_time,
-            end_time,
-        )
+        try:
+            vehicle_locations = await self.hass.async_add_executor_job(
+                get_vehicle_locations,
+                line_ref,
+                start_time,
+                end_time,
+            )
+        except KeyError as e:
+            _LOGGER.error(f"KeyError: {e}")
+            vehicle_locations = pd.DataFrame()
         
         _LOGGER.debug("Vehicle locations columns: %s", vehicle_locations.columns.tolist())
         
