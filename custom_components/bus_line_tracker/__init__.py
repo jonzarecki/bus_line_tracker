@@ -130,7 +130,7 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
         line_ref = routes_df["line_ref"].iloc[0]
         
         # Get vehicle locations for the last hour
-        end_time = now
+        end_time = now.replace(second=0, microsecond=0)
         start_time = end_time - timedelta(hours=1)
         
         try:
