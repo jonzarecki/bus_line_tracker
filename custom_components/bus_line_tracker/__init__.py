@@ -93,6 +93,7 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
         # Get current date in Israel timezone
         now = datetime.now(ZoneInfo("Israel"))
         date_str = now.strftime("%Y-%m-%d")
+        _LOGGER.error(f"ref point: {self._ref_point}")
         
         # Get routes information
         try:
@@ -121,7 +122,8 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
             
         # Log the available columns for debugging
         _LOGGER.debug("Available columns in routes_df: %s", routes_df.columns.tolist())
-        
+        _LOGGER.debug(f"routes_df head: {routes_df.head(10)}")
+
         # Check if we have line_ref column
         if "line_ref" not in routes_df.columns:
             _LOGGER.error("Required column 'line_ref' not found in routes data")
@@ -150,16 +152,14 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
             _LOGGER.error(f"KeyError: {e}", exc_info=True)
             vehicle_locations = pd.DataFrame()
         
-        _LOGGER.debug("Vehicle locations columns: %s", vehicle_locations.columns.tolist())
-        
         if vehicle_locations.empty:
             _LOGGER.warning("No vehicle locations found")
             return {}
 
         # log head and tail of vehicle_locations
+        _LOGGER.debug("Vehicle locations columns: %s", vehicle_locations.columns.tolist())
         _LOGGER.error(f"Vehicle locations head: {vehicle_locations.head()}")
         _LOGGER.error(f"Vehicle locations tail: {vehicle_locations.tail()}")
-        _LOGGER.error(f"ref point: {self._ref_point}")
 
         # Get current distances if reference point is set
         if self._ref_point:
