@@ -105,7 +105,14 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
                 self._direction,
             )
         except KeyError as e:
-            _LOGGER.error(f"KeyError: {e}")
+            _LOGGER.warning(
+                "Failed to get routes with parameters: route_mkt=%s, date=%s, filter_name=%s, direction=%s",
+                self._route_mkt,
+                date_str,
+                self._filter_name,
+                self._direction,
+            )
+            _LOGGER.error(f"KeyError: {e}", exc_info=True)
             routes_df = pd.DataFrame()  
 
         if routes_df.empty:
@@ -134,7 +141,13 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
                 end_time,
             )
         except KeyError as e:
-            _LOGGER.error(f"KeyError: {e}")
+            _LOGGER.warning(
+                "Failed to get vehicle locations with parameters: line_ref=%s, start_time=%s, end_time=%s",
+                line_ref,
+                start_time,
+                end_time,
+            )
+            _LOGGER.error(f"KeyError: {e}", exc_info=True)
             vehicle_locations = pd.DataFrame()
         
         _LOGGER.debug("Vehicle locations columns: %s", vehicle_locations.columns.tolist())
