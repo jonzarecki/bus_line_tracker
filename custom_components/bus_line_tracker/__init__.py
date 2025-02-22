@@ -14,6 +14,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+import pandas as pd
 
 from .const import (
     CONF_DIRECTION,
@@ -94,17 +95,29 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
         date_str = now.strftime("%Y-%m-%d")
         
         # Get routes information
-        routes_df = await self.hass.async_add_executor_job(
-            get_routes_for_route_mkt,
-            self._route_mkt,
-            date_str,
-            date_str,
-            self._filter_name,
-            self._direction,
-        )
-        
+        try:
+            routes_df = await self.hass.async_add_executor_job(
+                get_routes_for_route_mkt,
+                self._route_mkt,
+                date_str,
+                date_str,
+                self._filter_name,
+                self._direction,
+            )
+        except KeyError as e:
+            _LOGGER.error(f"KeyError: {e}")
+            routes_df = pd.DataFrame()  
+
         if routes_df.empty:
             _LOGGER.warning("No routes found for the given criteria")
+            return {}
+            
+        # Log the available columns for debugging
+        _LOGGER.debug("Available columns in routes_df: %s", routes_df.columns.tolist())
+        
+        # Check if we have line_ref column
+        if "line_ref" not in routes_df.columns:
+            _LOGGER.error("Required column 'line_ref' not found in routes data")
             return {}
             
         line_ref = routes_df["line_ref"].iloc[0]
