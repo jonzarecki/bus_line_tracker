@@ -132,28 +132,34 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
             _LOGGER.error("Required column 'line_ref' not found in routes data")
             return {}
             
-        line_ref = routes_df["line_ref"].iloc[0]
 
         # Get vehicle locations for the last hour
         end_time = now.replace(second=0, microsecond=0)
         start_time = end_time - timedelta(minutes=30)
         
-        try:
-            vehicle_locations = await self.hass.async_add_executor_job(
-                get_vehicle_locations,
-                line_ref,
-                start_time,
-                end_time,
-            )
-        except KeyError as e:
-            _LOGGER.warning(
-                "Failed to get vehicle locations with parameters: line_ref=%s, start_time=%s, end_time=%s",
-                line_ref,
-                start_time,
-                end_time,
-            )
-            _LOGGER.error(f"KeyError: {e}", exc_info=True)
-            vehicle_locations = pd.DataFrame()
+        vehicle_locations = pd.DataFrame()
+        
+        # Iterate through all line_refs
+        for line_ref in routes_df["line_ref"]:
+            try:
+                line_locations = await self.hass.async_add_executor_job(
+                    get_vehicle_locations,
+                    line_ref,
+                    start_time, 
+                    end_time,
+                )
+                # Append locations for this line to main dataframe
+                vehicle_locations = pd.concat([vehicle_locations, line_locations])
+                
+            except KeyError as e:
+                _LOGGER.warning(
+                    "Failed to get vehicle locations with parameters: line_ref=%s, start_time=%s, end_time=%s",
+                    line_ref,
+                    start_time,
+                    end_time,
+                )
+                _LOGGER.error(f"KeyError: {e}", exc_info=True)
+                continue
         
         if vehicle_locations.empty:
             _LOGGER.warning("No vehicle locations found")
