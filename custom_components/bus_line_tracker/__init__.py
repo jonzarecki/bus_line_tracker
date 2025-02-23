@@ -8,6 +8,7 @@ from israel_bus_locator.bus_utils import (
     get_routes_for_route_mkt,
     get_vehicle_locations,
     get_current_distances_to_ref,
+    split_by_ride_id,
 )
 
 from homeassistant.config_entries import ConfigEntry
@@ -124,8 +125,6 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
             _LOGGER.warning("No routes found for the given criteria")
             return {}
             
-        # Log the available columns for debugging
-        _LOGGER.debug("Available columns in routes_df: %s", routes_df.columns.tolist())
         _LOGGER.debug(f"routes_df:\n{routes_df}")
 
         # Check if we have line_ref column
@@ -134,10 +133,10 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
             return {}
             
         line_ref = routes_df["line_ref"].iloc[0]
-        
+
         # Get vehicle locations for the last hour
         end_time = now.replace(second=0, microsecond=0)
-        start_time = end_time - timedelta(hours=1)
+        start_time = end_time - timedelta(minutes=30)
         
         try:
             vehicle_locations = await self.hass.async_add_executor_job(
@@ -160,9 +159,11 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
             _LOGGER.warning("No vehicle locations found")
             return {}
 
-        # log head and tail of vehicle_locations
-        _LOGGER.debug("Vehicle locations columns: %s", vehicle_locations.columns.tolist())
-        _LOGGER.debug(f"Vehicle locations:\n{vehicle_locations}")
+
+        # Log unique rides found
+        unique_rides = vehicle_locations["siri_ride__id"].unique()
+        _LOGGER.debug(f"Unique rides: {unique_rides}, shape: {vehicle_locations.shape}")
+        # _LOGGER.debug(f"Vehicle locations:\n{vehicle_locations}")
 
         # Get current distances if reference point is set
         if self._ref_point:
@@ -176,8 +177,9 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
                 _LOGGER.warning("No current distances available")
                 return {}
                 
-            # Get the most recent ride's data
-            latest_ride = next(iter(current_distances.values()))
+            # Get the latest point for the ride closest to the journey start
+            latest_ride = min(current_distances.values(), key=lambda ride: ride["distance_from_journey_start"].iloc[0])
+            latest_location = latest_ride.iloc[0]
             
             return {
                 "location": f"{latest_ride['lat']:.4f},{latest_ride['lon']:.4f}",
@@ -189,8 +191,11 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
                 "last_update": latest_location["recorded_at_time"],
             }
         
-        # If no reference point, just return the latest location data
-        latest_location = vehicle_locations.iloc[0]
+
+        # If no reference point, just return the latest point for the ride closest to the journey start
+        split_rides = split_by_ride_id(vehicle_locations)
+        closest_ride = min(split_rides, key=lambda ride: ride["distance_from_journey_start"].iloc[0])
+        latest_location = closest_ride.iloc[0]
         return {
             "location": f"{latest_location['lat']:.4f},{latest_location['lon']:.4f}",
             "speed": latest_location.get("velocity", 0),
