@@ -152,17 +152,17 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
                 vehicle_locations = pd.concat([vehicle_locations, line_locations])
                 
             except KeyError as e:
-                _LOGGER.warning(
+                _LOGGER.debug(
                     "Failed to get vehicle locations with parameters: line_ref=%s, start_time=%s, end_time=%s",
                     line_ref,
                     start_time,
                     end_time,
                 )
-                _LOGGER.error(f"KeyError: {e}", exc_info=True)
+                _LOGGER.debug(f"KeyError: {e}", exc_info=True)
                 continue
         
         if vehicle_locations.empty:
-            _LOGGER.warning("No vehicle locations found")
+            _LOGGER.debug("No vehicle locations found")
             return {}
 
 
@@ -171,43 +171,19 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
         _LOGGER.debug(f"Unique rides: {unique_rides}, shape: {vehicle_locations.shape}")
         # _LOGGER.debug(f"Vehicle locations:\n{vehicle_locations}")
 
-        # Get current distances if reference point is set
-        if self._ref_point:
-            current_distances = await self.hass.async_add_executor_job(
-                get_current_distances_to_ref,
-                vehicle_locations,
-                self._ref_point,
-            )
-            
-            if not current_distances:
-                _LOGGER.warning("No current distances available")
-                return {}
-                
-            # Get the latest point for the ride closest to the journey start
-            latest_ride = min(current_distances.values(), key=lambda ride: ride["distance_from_journey_start"].iloc[0])
-            latest_location = latest_ride.iloc[0]
-            
-            return {
-                "location": f"{latest_ride['lat']:.4f},{latest_ride['lon']:.4f}",
-                "speed": latest_location.get("velocity", 0),
-                "bearing": latest_ride.get("bearing", 0),
-                "distance_from_start": latest_ride.get("distance_from_journey_start", 0),
-                "distance_from_station": latest_ride["current_distance"],
-                "vehicle_ref": latest_location["siri_ride__vehicle_ref"],
-                "last_update": latest_location["recorded_at_time"],
-            }
-        
-
-        # If no reference point, just return the latest point for the ride closest to the journey start
+        # Get the latest point for the ride closest to the journey start
         split_rides = split_by_ride_id(vehicle_locations)
-        closest_ride = min(split_rides, key=lambda ride: ride["distance_from_journey_start"].iloc[0])
-        latest_location = closest_ride.iloc[0]
+        closest_ride = min(split_rides.keys(), key=lambda ride: ride["distance_from_journey_start"].iloc[0])
+        latest_location = closest_ride.iloc[0]       
+        _LOGGER.debug(f"Latest location: {latest_location}")
+        
         return {
             "location": f"{latest_location['lat']:.4f},{latest_location['lon']:.4f}",
             "speed": latest_location.get("velocity", 0),
             "bearing": latest_location.get("bearing", 0),
             "distance_from_start": latest_location.get("distance_from_journey_start", 0),
-            "distance_from_station": None,
+            "distance_from_station": None if self._ref_point is None else 
+                ((latest_location["lat"] - self._ref_point[0]) ** 2 + (latest_location["lon"] - self._ref_point[1]) ** 2) ** 0.5,
             "vehicle_ref": latest_location["siri_ride__vehicle_ref"],
             "last_update": latest_location["recorded_at_time"],
         }
