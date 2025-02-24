@@ -1,4 +1,5 @@
 """Integration tests for Bus Line Tracker."""
+
 from datetime import datetime, timedelta
 from unittest.mock import patch
 from zoneinfo import ZoneInfo
@@ -6,12 +7,11 @@ from zoneinfo import ZoneInfo
 import pytest
 from freezegun import freeze_time
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.bus_line_tracker import (
-    BusLineDataCoordinator,
     DOMAIN,
+    BusLineDataCoordinator,
 )
 from custom_components.bus_line_tracker.const import (
     CONF_DIRECTION,
@@ -130,4 +130,4 @@ async def test_real_bus_data_no_buses_running(hass: HomeAssistant):
         await coordinator.async_refresh()
 
         # Should return empty data but not fail
-        assert coordinator.data == {} 
+        assert coordinator.data == {}
