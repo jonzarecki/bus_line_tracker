@@ -171,7 +171,8 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
         # Get the latest point for the ride closest to the journey start
         split_rides = split_by_ride_id(vehicle_locations)
         closest_ride = min(split_rides, key=lambda ride: ride["distance_from_journey_start"].iloc[0])
-        latest_location = closest_ride.iloc[0]
+        
+        latest_location = await self.hass.async_add_executor_job(lambda: closest_ride.iloc[0])
         _LOGGER.debug(f"Latest location: {latest_location}")
 
         return {
