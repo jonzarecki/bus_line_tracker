@@ -1,6 +1,7 @@
 """The Bus Line Tracker integration."""
 
 import logging
+import math
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
@@ -33,6 +34,23 @@ pd.set_option("display.max_colwidth", None)
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR]
+
+
+def haversine_distance(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance between two points 
+    on the earth (specified in decimal degrees)
+    """
+    # Convert decimal degrees to radians
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+
+    # Haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    r = 6371000  # Radius of earth in meters
+    return c * r
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -175,17 +193,23 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
         latest_location = await self.hass.async_add_executor_job(lambda: closest_ride.iloc[0])
         _LOGGER.debug(f"Latest location: {latest_location}")
 
+        # Calculate distance from station using haversine formula if reference point is available
+        distance_from_station = None
+        if self._ref_point is not None:
+            distance_from_station = haversine_distance(
+                latest_location["lat"], 
+                latest_location["lon"], 
+                self._ref_point[0], 
+                self._ref_point[1]
+            )
+            _LOGGER.debug(f"Distance from station: {distance_from_station} meters")
+
         return {
             "location": f"{latest_location['lat']:.4f},{latest_location['lon']:.4f}",
             "speed": latest_location.get("velocity", 0),
             "bearing": latest_location.get("bearing", 0),
             "distance_from_start": latest_location.get("distance_from_journey_start", 0),
-            "distance_from_station": None
-            if self._ref_point is None
-            else (
-                (latest_location["lat"] - self._ref_point[0]) ** 2 + (latest_location["lon"] - self._ref_point[1]) ** 2
-            )
-            ** 0.5,
+            "distance_from_station": distance_from_station,
             "vehicle_ref": latest_location["siri_ride__vehicle_ref"],
             "last_update": latest_location["recorded_at_time"],
         }
