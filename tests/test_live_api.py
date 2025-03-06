@@ -1,17 +1,28 @@
 """Test the Bus Line Tracker integration with live API."""
 
 import asyncio
+import os
 import sys
 from datetime import datetime, timedelta
+from functools import partial
 from zoneinfo import ZoneInfo
 
 import pytest
+import stride.common
+import urllib3
 from israel_bus_locator.bus_utils import (
     get_current_distances_to_ref,
     get_routes_for_route_mkt,
     get_vehicle_locations,
+    split_by_ride_id,
 )
 
+# Disable SSL verification warnings
+urllib3.disable_warnings()
+
+# Patch stride's get function to disable SSL verification
+original_get = stride.common.requests.get
+stride.common.requests.get = partial(original_get, verify=False)
 
 @pytest.mark.skipif("pytest" in sys.modules, reason="This test should be run directly with Python, not with pytest")
 @pytest.mark.enable_socket

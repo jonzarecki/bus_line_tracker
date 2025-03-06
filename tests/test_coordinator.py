@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import UpdateFailed
 from custom_components.bus_line_tracker import (
     BusLineDataCoordinator,
     async_setup_entry,
+    haversine_distance,
 )
 from custom_components.bus_line_tracker.const import (
     CONF_ROUTE_MKT,
@@ -20,6 +21,24 @@ from custom_components.bus_line_tracker.const import (
 )
 
 from .test_config_flow import MockConfigEntry
+
+
+def test_haversine_distance():
+    """Test the haversine distance calculation function."""
+    # Test case 1: Same point should return 0
+    assert haversine_distance(32.0, 34.0, 32.0, 34.0) == pytest.approx(0, abs=0.1)
+    
+    # Test case 2: Known distance between two points
+    # Tel Aviv (32.0853, 34.7818) to Jerusalem (31.7683, 35.2137) is about 54.4 km
+    distance = haversine_distance(32.0853, 34.7818, 31.7683, 35.2137)
+    assert distance == pytest.approx(54400, rel=0.05)  # Within 5% of expected value
+    
+    # Test case 3: Short distance
+    # Two points 1km apart
+    lat1, lon1 = 32.0853, 34.7818
+    lat2, lon2 = 32.0943, 34.7818  # Approximately 1km north
+    distance = haversine_distance(lat1, lon1, lat2, lon2)
+    assert distance == pytest.approx(1000, rel=0.1)  # Within 10% of expected value
 
 
 async def test_coordinator_update_success(hass: HomeAssistant):

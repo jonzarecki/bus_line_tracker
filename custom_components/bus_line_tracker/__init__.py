@@ -2,10 +2,14 @@
 
 import logging
 import math
+import os
 from datetime import datetime, timedelta
+from functools import partial
 from zoneinfo import ZoneInfo
 
 import pandas as pd
+import stride.common
+import urllib3
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
@@ -25,6 +29,13 @@ from .const import (
     DEFAULT_UPDATE_INTERVAL,
     DOMAIN,
 )
+
+# Disable SSL verification warnings
+urllib3.disable_warnings()
+
+# Patch stride's get function to disable SSL verification
+original_get = stride.common.requests.get
+stride.common.requests.get = partial(original_get, verify=False)
 
 pd.set_option("display.max_rows", None)
 pd.set_option("display.max_columns", None)
@@ -57,14 +68,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Bus Line Tracker from a config entry."""
     hass.data.setdefault(DOMAIN, {})
 
-    update_interval = entry.options.get("update_interval", DEFAULT_UPDATE_INTERVAL)
-
     coordinator = BusLineDataCoordinator(
         hass,
         config_entry=entry,
-        update_interval=timedelta(seconds=update_interval),
+        update_interval=timedelta(seconds=entry.options.get("update_interval", DEFAULT_UPDATE_INTERVAL)),
     )
 
+    # Fetch initial data
     await coordinator.async_config_entry_first_refresh()
 
     hass.data[DOMAIN][entry.entry_id] = coordinator
@@ -85,12 +95,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 class BusLineDataCoordinator(DataUpdateCoordinator):
     """Class to manage fetching bus data."""
 
-    def __init__(
-        self,
-        hass: HomeAssistant,
-        config_entry: ConfigEntry,
-        update_interval: timedelta,
-    ) -> None:
+    def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, update_interval: timedelta) -> None:
         """Initialize."""
         super().__init__(
             hass,
@@ -98,13 +103,12 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
             name=DOMAIN,
             update_interval=update_interval,
         )
-        self.config_entry = config_entry
+
         self._route_mkt = config_entry.data[CONF_ROUTE_MKT]
         self._filter_name = config_entry.data.get(CONF_FILTER_NAME)
         self._direction = config_entry.data.get(CONF_DIRECTION)
         self._ref_point = None
 
-        # Set up reference point if lat/lon are provided
         lat = config_entry.data.get(CONF_LAT)
         lon = config_entry.data.get(CONF_LON)
         if lat is not None and lon is not None:
@@ -190,25 +194,25 @@ class BusLineDataCoordinator(DataUpdateCoordinator):
         split_rides = split_by_ride_id(vehicle_locations)
         closest_ride = min(split_rides, key=lambda ride: ride["distance_from_journey_start"].iloc[0])
         
-        latest_location = await self.hass.async_add_executor_job(lambda: closest_ride.iloc[0])
+        latest_location = closest_ride.iloc[0]
         _LOGGER.debug(f"Latest location: {latest_location}")
 
         # Calculate distance from station using haversine formula if reference point is available
         distance_from_station = None
-        if self._ref_point is not None:
+        if self._ref_point:
             distance_from_station = haversine_distance(
-                latest_location["lat"], 
-                latest_location["lon"], 
-                self._ref_point[0], 
-                self._ref_point[1]
+                latest_location["lat"],
+                latest_location["lon"],
+                self._ref_point[0],
+                self._ref_point[1],
             )
-            _LOGGER.debug(f"Distance from station: {distance_from_station} meters")
 
+        # Return the data in the format expected by the sensors
         return {
-            "location": f"{latest_location['lat']:.4f},{latest_location['lon']:.4f}",
-            "speed": latest_location.get("velocity", 0),
-            "bearing": latest_location.get("bearing", 0),
-            "distance_from_start": latest_location.get("distance_from_journey_start", 0),
+            "location": f"{latest_location['lat']},{latest_location['lon']}",
+            "speed": latest_location["velocity"],
+            "bearing": latest_location["bearing"],
+            "distance_from_start": latest_location["distance_from_journey_start"],
             "distance_from_station": distance_from_station,
             "vehicle_ref": latest_location["siri_ride__vehicle_ref"],
             "last_update": latest_location["recorded_at_time"],
