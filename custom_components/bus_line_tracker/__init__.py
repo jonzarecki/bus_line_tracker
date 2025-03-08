@@ -44,7 +44,7 @@ pd.set_option("display.max_colwidth", None)
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.DEVICE_TRACKER]
 
 
 def haversine_distance(lat1, lon1, lat2, lon2):

@@ -9,6 +9,7 @@ A focused Home Assistant integration that helps you catch your bus on time by tr
 - 🚗 Vehicle speed and bearing information
 - 📏 Distance tracking from journey start
 - 🔄 Regular updates (every 30 seconds)
+- 🗺️ **NEW**: Map view showing real-time bus positions
 
 ### Smart Notifications
 - ⏰ "Time to leave" notifications based on:
@@ -29,6 +30,9 @@ For each bus line at your configured stop:
 - `bus_[line]_distance_from_station`: Distance from configured reference point
 - `bus_[line]_vehicle_ref`: Vehicle reference ID
 - `bus_[line]_last_update`: Timestamp of last update
+
+### Map Integration
+- `device_tracker.bus_[line]_position`: Bus position tracker for map view
 
 ## Prerequisites
 - Home Assistant installation
@@ -125,6 +129,24 @@ automation:
             Bus 56 is {{ states('sensor.bus_56_distance_from_station') }} meters away,
             moving at {{ states('sensor.bus_56_speed') }} km/h
             in direction {{ states('sensor.bus_56_bearing') }}°.
+```
+
+### Map View Setup
+You can add the bus tracker to your map view in the Home Assistant UI:
+
+1. Go to **Settings** > **Dashboards** > **Edit Dashboard**
+2. Add a new **Map** card
+3. In the entities section, add your bus tracker: `device_tracker.bus_[line]_position`
+4. Save the card
+
+Or use YAML to create a map card:
+
+```yaml
+type: map
+entities:
+  - entity: device_tracker.bus_56_position
+title: Bus 56 Live Tracking
+hours_to_show: 0.5
 ```
 
 ## Version History
